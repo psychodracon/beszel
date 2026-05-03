@@ -357,9 +357,12 @@ func validateCpuPercentage(cpuPct float64, containerName string) error {
 }
 
 // updateContainerStatsValues updates the final stats values
-func updateContainerStatsValues(stats *container.Stats, cpuPct float64, usedMemory uint64, sent_delta, recv_delta uint64, readTime time.Time) {
+func updateContainerStatsValues(stats *container.Stats, cpuPct float64, usedMemory uint64, memLimitBytes uint64, sent_delta, recv_delta uint64, readTime time.Time) {
 	stats.Cpu = utils.TwoDecimals(cpuPct)
 	stats.Mem = utils.BytesToMegabytes(float64(usedMemory))
+	if memLimitBytes > 0 {
+		stats.MemLimit = utils.BytesToMegabytes(float64(memLimitBytes))
+	}
 	stats.Bandwidth = [2]uint64{sent_delta, recv_delta}
 	// TODO(0.19+): stop populating NetworkSent/NetworkRecv (deprecated in 0.18.3)
 	stats.NetworkSent = utils.BytesToMegabytes(float64(sent_delta))
@@ -518,6 +521,7 @@ func (dm *dockerManager) updateContainerStats(ctr *container.ApiInfo, cacheTimeM
 	// reset current stats
 	stats.Cpu = 0
 	stats.Mem = 0
+	stats.MemLimit = 0
 	stats.Bandwidth = [2]uint64{0, 0}
 	// TODO(0.19+): stop populating NetworkSent/NetworkRecv (deprecated in 0.18.3)
 	stats.NetworkSent = 0
@@ -578,7 +582,7 @@ func (dm *dockerManager) updateContainerStats(ctr *container.ApiInfo, cacheTimeM
 	stats.PrevNet.Sent, stats.PrevNet.Recv = total_sent, total_recv
 
 	// Update final stats values
-	updateContainerStatsValues(stats, cpuPct, usedMemory, sent_delta, recv_delta, res.Read)
+	updateContainerStatsValues(stats, cpuPct, usedMemory, res.MemoryStats.Limit, sent_delta, recv_delta, res.Read)
 	// store per-cache-time read time for Windows CPU percent calc
 	dm.lastCpuReadTime[cacheTimeMs][ctr.IdShort] = res.Read
 

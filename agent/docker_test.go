@@ -308,13 +308,14 @@ func TestUpdateContainerStatsValues(t *testing.T) {
 	}
 
 	testTime := time.Now()
-	updateContainerStatsValues(stats, 75.5, 1048576, 524288, 262144, testTime)
+	updateContainerStatsValues(stats, 75.5, 1048576, 2097152, 524288, 262144, testTime)
 
 	// Check CPU percentage (should be rounded to 2 decimals)
 	assert.Equal(t, 75.5, stats.Cpu)
 
 	// Check memory (should be converted to MB: 1048576 bytes = 1 MB)
 	assert.Equal(t, 1.0, stats.Mem)
+	assert.Equal(t, 2.0, stats.MemLimit)
 
 	// Check bandwidth (raw bytes)
 	assert.Equal(t, [2]uint64{524288, 262144}, stats.Bandwidth)
@@ -950,10 +951,11 @@ func TestContainerStatsInitialization(t *testing.T) {
 
 	// Test updating values
 	testTime := time.Now()
-	updateContainerStatsValues(stats, 45.67, 2097152, 1048576, 524288, testTime)
+	updateContainerStatsValues(stats, 45.67, 2097152, 4194304, 1048576, 524288, testTime)
 
 	assert.Equal(t, 45.67, stats.Cpu)
 	assert.Equal(t, 2.0, stats.Mem)
+	assert.Equal(t, 4.0, stats.MemLimit)
 	assert.Equal(t, [2]uint64{1048576, 524288}, stats.Bandwidth)
 	// Deprecated fields still populated for backward compatibility with older hubs
 	assert.Equal(t, 1.0, stats.NetworkSent) // 1048576 bytes = 1 MB
@@ -1115,10 +1117,14 @@ func TestContainerStatsEndToEndWithRealData(t *testing.T) {
 	// Test stats value updates
 	testStats := &container.Stats{}
 	testTime := time.Now()
-	updateContainerStatsValues(testStats, cpuPct, usedMemory, 1000000, 500000, testTime)
+	memLimitBytes := apiStats.MemoryStats.Limit
+	updateContainerStatsValues(testStats, cpuPct, usedMemory, memLimitBytes, 1000000, 500000, testTime)
 
 	assert.Equal(t, cpuPct, testStats.Cpu)
 	assert.Equal(t, utils.BytesToMegabytes(float64(usedMemory)), testStats.Mem)
+	if memLimitBytes > 0 {
+		assert.Equal(t, utils.BytesToMegabytes(float64(memLimitBytes)), testStats.MemLimit)
+	}
 	assert.Equal(t, [2]uint64{1000000, 500000}, testStats.Bandwidth)
 	// Deprecated fields still populated for backward compatibility with older hubs
 	assert.Equal(t, utils.BytesToMegabytes(1000000), testStats.NetworkSent)
