@@ -1,8 +1,8 @@
-import type { Column, ColumnDef } from "@tanstack/react-table"
+import type { CellContext, Column, ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { cn, decimalString, formatBytes, hourWithSeconds } from "@/lib/utils"
 import type { ContainerRecord } from "@/types"
-import { ContainerHealth, ContainerHealthLabels } from "@/lib/enums"
+import { ContainerHealth, ContainerHealthLabels, MeterState, SystemStatus } from "@/lib/enums"
 import {
 	ClockIcon,
 	ContainerIcon,
@@ -15,7 +15,7 @@ import {
 import { EthernetIcon, HourglassIcon, SquareArrowRightEnterIcon } from "../ui/icons"
 import { Badge } from "../ui/badge"
 import { t } from "@lingui/core/macro"
-import { $allSystemsById, $longestSystemNameLen } from "@/lib/stores"
+import { $allSystemsById, $longestSystemNameLen, $userSettings } from "@/lib/stores"
 import { useStore } from "@nanostores/react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
@@ -39,6 +39,17 @@ function getStatusValue(status: string): number {
 		}
 	}
 	return 0
+}
+
+const STATUS_COLORS = {
+	[SystemStatus.Up]: "bg-green-500",
+	[SystemStatus.Down]: "bg-red-500",
+	[SystemStatus.Paused]: "bg-primary/40",
+	[SystemStatus.Pending]: "bg-yellow-500",
+} as const
+
+function getMeterStateByThresholds(value: number, warn = 65, crit = 90): MeterState {
+	return value >= crit ? MeterState.Crit : value >= warn ? MeterState.Warn : MeterState.Good
 }
 
 export const containerChartCols: ColumnDef<ContainerRecord>[] = [
@@ -95,11 +106,55 @@ export const containerChartCols: ColumnDef<ContainerRecord>[] = [
 		accessorFn: (record) => record.memory,
 		invertSorting: true,
 		header: ({ column }) => <HeaderButton column={column} name={t`Memory`} Icon={MemoryStickIcon} />,
-		cell: ({ getValue }) => {
-			const val = getValue() as number
-			const formatted = formatBytes(val, false, undefined, true)
+		cell: ({ row }) => {
+			const { memory, memory_limit: limit } = row.original
+			if (limit != null && limit > 0) {
+				const limitDecimals = Number.isInteger(limit) ? 0 : 2
+				return (
+					<span className="ms-1 tabular-nums">
+						{`${decimalString(memory)}MB / ${decimalString(limit, limitDecimals)}MB`}
+					</span>
+				)
+			}
+			const formatted = formatBytes(memory, false, undefined, true)
 			return (
 				<span className="ms-1 tabular-nums">{`${decimalString(formatted.value, formatted.value >= 10 ? 1 : 2)} ${formatted.unit}`}</span>
+			)
+		},
+	},
+	{
+		id: "memory_pct",
+		accessorFn: (record) => {
+			const limit = record.memory_limit
+			if (limit == null || limit <= 0) {
+				return null
+			}
+			return (record.memory / limit) * 100
+		},
+		invertSorting: true,
+		minSize: 112,
+		header: ({ column }) => <HeaderButton column={column} name={`${t`Memory`} %`} Icon={MemoryStickIcon} />,
+		cell: ({ getValue }) => {
+			const raw = getValue() as number | null
+			if (raw == null) {
+				return <span className="ms-1 tabular-nums text-muted-foreground">—</span>
+			}
+			const { colorWarn = 65, colorCrit = 90 } = useStore($userSettings, { keys: ["colorWarn", "colorCrit"] })
+			const val = Number(raw) || 0
+			const threshold = getMeterStateByThresholds(val, colorWarn, colorCrit)
+			const barWidth = Math.min(100, val)
+			return (
+				<div className="flex gap-2 items-center tabular-nums tracking-tight w-full ms-1">
+					<span className="min-w-8 shrink-0">{decimalString(val, val >= 10 ? 1 : 2)}%</span>
+					<span className="flex-1 min-w-8 grid bg-muted h-[1em] rounded-sm overflow-hidden">
+						<span className={cn("inline-block size-2 rounded-full me-0.5", {
+								[STATUS_COLORS[SystemStatus.Up]]: threshold === MeterState.Good,
+								[STATUS_COLORS[SystemStatus.Pending]]: threshold === MeterState.Warn,
+								[STATUS_COLORS[SystemStatus.Down]]: threshold === MeterState.Crit,
+								[STATUS_COLORS[SystemStatus.Paused]]: status !== SystemStatus.Up,
+							})} style={{ width: `${barWidth}%` }}></span>
+					</span>
+				</div>
 			)
 		},
 	},

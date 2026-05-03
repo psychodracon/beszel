@@ -110,8 +110,18 @@ export function ContainerMemoryChart({
 					const { value, unit } = formatBytes(val, false, Unit.Bytes, true)
 					return `${toFixedFloat(value, val >= 10 ? 0 : 1)} ${unit}`
 				}}
-				contentFormatter={(item) => {
-					const { value, unit } = formatBytes(item.value, false, Unit.Bytes, true)
+				contentFormatter={(item, key) => {
+					const row = item.payload as Record<string, { m?: number; ml?: number } | number | null | undefined>
+					const c = row?.[key]
+					const usedMb = typeof item.value === "number" ? item.value : Number(item.value)
+					if (c != null && typeof c === "object" && c.ml != null && c.ml > 0) {
+						const used = c.m ?? usedMb
+						const limit = c.ml
+						const pct = (used / limit) * 100
+						const limitDecimals = Number.isInteger(limit) ? 0 : 2
+						return `${decimalString(used)}MB / ${decimalString(limit, limitDecimals)}MB (${decimalString(pct)}%)`
+					}
+					const { value, unit } = formatBytes(usedMb, false, Unit.Bytes, true)
 					return `${decimalString(value)} ${unit}`
 				}}
 				domain={pinnedAxisDomain()}

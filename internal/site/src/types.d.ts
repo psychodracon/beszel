@@ -208,8 +208,10 @@ interface ContainerStats {
 	n: string
 	/** cpu percent */
 	c: number
-	/** memory used (gb) */
+	/** memory used (MB) */
 	m: number
+	/** memory cgroup limit (MB) */
+	ml?: number
 	// network sent (mb)
 	ns?: number
 	// network received (mb)
@@ -266,6 +268,7 @@ export interface ContainerRecord extends RecordModel {
 	ports: string
 	cpu: number
 	memory: number
+	memory_limit?: number
 	net: number
 	health: number
 	status: string
