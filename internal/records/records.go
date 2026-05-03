@@ -477,6 +477,7 @@ func AverageContainerStatsSlice(records [][]container.Stats) []container.Stats {
 			}
 			sums[stat.Name].Cpu += stat.Cpu
 			sums[stat.Name].Mem += stat.Mem
+			sums[stat.Name].MemLimit += stat.MemLimit
 			sentBytes := stat.Bandwidth[0]
 			recvBytes := stat.Bandwidth[1]
 			if sentBytes == 0 && recvBytes == 0 && (stat.NetworkSent != 0 || stat.NetworkRecv != 0) {
@@ -494,6 +495,7 @@ func AverageContainerStatsSlice(records [][]container.Stats) []container.Stats {
 			Name:      value.Name,
 			Cpu:       twoDecimals(value.Cpu / count),
 			Mem:       twoDecimals(value.Mem / count),
+			MemLimit:  twoDecimals(value.MemLimit / count),
 			Bandwidth: [2]uint64{uint64(float64(value.Bandwidth[0]) / count), uint64(float64(value.Bandwidth[1]) / count)},
 		})
 	}
