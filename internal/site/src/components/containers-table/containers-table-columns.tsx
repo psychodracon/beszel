@@ -1,4 +1,4 @@
-import type { CellContext, Column, ColumnDef } from "@tanstack/react-table"
+import type { Column, ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { cn, decimalString, formatBytes, hourWithSeconds } from "@/lib/utils"
 import type { ContainerRecord } from "@/types"
@@ -147,12 +147,14 @@ export const containerChartCols: ColumnDef<ContainerRecord>[] = [
 				<div className="flex gap-2 items-center tabular-nums tracking-tight w-full ms-1">
 					<span className="min-w-8 shrink-0">{decimalString(val, val >= 10 ? 1 : 2)}%</span>
 					<span className="flex-1 min-w-8 grid bg-muted h-[1em] rounded-sm overflow-hidden">
-						<span className={cn("inline-block size-2 rounded-full me-0.5", {
+						<span
+							className={cn("h-full", {
 								[STATUS_COLORS[SystemStatus.Up]]: threshold === MeterState.Good,
 								[STATUS_COLORS[SystemStatus.Pending]]: threshold === MeterState.Warn,
 								[STATUS_COLORS[SystemStatus.Down]]: threshold === MeterState.Crit,
-								[STATUS_COLORS[SystemStatus.Paused]]: status !== SystemStatus.Up,
-							})} style={{ width: `${barWidth}%` }}></span>
+							})}
+							style={{ width: `${barWidth}%` }}
+						></span>
 					</span>
 				</div>
 			)
