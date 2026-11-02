@@ -143,6 +143,8 @@ type CPUUsage struct {
 type MemoryStats struct {
 	// current res_counter usage for memory
 	Usage uint64 `json:"usage,omitzero"`
+	// memory limit (cgroup)
+	Limit uint64 `json:"limit,omitempty"`
 	// all the stats exported via memory.stat.
 	Stats MemoryStatsStats `json:"stats"`
 	// private working set (Windows only)
@@ -197,6 +199,7 @@ type Stats struct {
 	Image           string       `json:"-" cbor:"8,keyasint"`
 	Ports           string       `json:"-" cbor:"10,keyasint"`
 	UpdateAvailable bool         `json:"u,omitzero" cbor:"11,keyasint,omitzero"`
+	MemLimit        float64      `json:"ml,omitzero" cbor:"12,keyasint,omitzero"` // memory cgroup limit (MB)
 	// PrevCpu     [2]uint64    `json:"-"`
 	CpuSystem    uint64       `json:"-"`
 	CpuContainer uint64       `json:"-"`

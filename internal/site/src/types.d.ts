@@ -1,5 +1,5 @@
+import type { BatteryState, ConnectionType, HourFormat, Os, ServiceStatus, ServiceSubState, Unit } from "@/lib/enums"
 import type { RecordModel } from "pocketbase"
-import type { Unit, Os, BatteryState, HourFormat, ConnectionType, ServiceStatus, ServiceSubState } from "@/lib/enums"
 
 // global window properties
 declare global {
@@ -306,6 +306,8 @@ interface ContainerStats {
 	c: number
 	/** memory used (mb) */
 	m: number
+	/** memory cgroup limit (MB) */
+	ml?: number
 	// network sent (mb)
 	ns?: number
 	// network received (mb)
@@ -364,6 +366,7 @@ export interface ContainerRecord extends RecordModel {
 	ports: string
 	cpu: number
 	memory: number
+	memory_limit?: number
 	net: number
 	health: number
 	status: string

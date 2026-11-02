@@ -721,7 +721,7 @@ func TestAverageContainerStatsSlice_Empty(t *testing.T) {
 func TestAverageContainerStatsSlice_SingleRecord(t *testing.T) {
 	input := [][]container.Stats{
 		{
-			{Name: "nginx", Cpu: 5.0, Mem: 128.0, Bandwidth: [2]uint64{1000, 2000}},
+			{Name: "nginx", Cpu: 5.0, Mem: 128.0, MemLimit: 512.0, Bandwidth: [2]uint64{1000, 2000}},
 		},
 	}
 
@@ -731,6 +731,7 @@ func TestAverageContainerStatsSlice_SingleRecord(t *testing.T) {
 	assert.Equal(t, "nginx", result[0].Name)
 	assert.Equal(t, 5.0, result[0].Cpu)
 	assert.Equal(t, 128.0, result[0].Mem)
+	assert.Equal(t, 512.0, result[0].MemLimit)
 	assert.Equal(t, [2]uint64{1000, 2000}, result[0].Bandwidth)
 }
 

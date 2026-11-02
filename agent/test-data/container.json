@@ -7,6 +7,7 @@
 	},
 	"memory_stats": {
 		"usage": 507400192,
+		"limit": 1073741824,
 		"stats": {
 			"inactive_file": 165130240
 		}
